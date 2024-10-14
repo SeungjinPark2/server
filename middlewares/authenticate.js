@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-// JWT 비밀키
-const SECRET_KEY = "mysecretkey";
+const JWTSECRET = process.env.JWTSECRET;
 
 // 인증 미들웨어
 const authenticateJWT = (req, res, next) => {
@@ -12,10 +11,11 @@ const authenticateJWT = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
+    const decoded = jwt.verify(token, JWTSECRET);
     req.user = decoded; // 토큰의 페이로드 데이터를 req 객체에 저장
     next(); // 다음 미들웨어 또는 라우트로 진행
   } catch (error) {
+    console.log(error);
     return res.status(403).json({ message: "Invalid Token" });
   }
 };

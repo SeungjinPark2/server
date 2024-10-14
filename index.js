@@ -3,20 +3,12 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const authenticateJWT = require("./middlewares/authenticate");
-const { Admin, User } = require("./role");
-
-// 인메모리 DB 사용
-const users = [
-  {
-    id: 1,
-    username: "admin",
-    password: "admin",
-    role: Admin,
-  },
-];
+const { User } = require("./role");
+const { users } = require("./temporalDB");
+const accountRouter = require("./routes/account");
 
 // JWT 비밀키
-const SECRET_KEY = "mysecretkey";
+const JWTSECRET = process.env.JWTSECRET;
 
 const app = express();
 app.use(bodyParser.json());
@@ -40,6 +32,10 @@ app.post("/signup", async (req, res) => {
     username,
     password: hashedPassword,
     role: User,
+    account: {
+      balance: "1000000",
+      accountNumber: Math.round(Math.random() * 10000000),
+    },
   };
   users.push(newUser);
 
@@ -63,7 +59,7 @@ app.post("/login", async (req, res) => {
   }
 
   // JWT 토큰 발급
-  const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, {
+  const token = jwt.sign({ id: user.id, username: user.username }, JWTSECRET, {
     expiresIn: "1h",
   });
 
@@ -74,6 +70,8 @@ app.post("/login", async (req, res) => {
 app.get("/protected", authenticateJWT, (req, res) => {
   res.json({ message: "Protected data", user: req.user });
 });
+
+app.use("/account", authenticateJWT, accountRouter);
 
 // 서버 실행
 app.listen(process.env.PORT, () => {
